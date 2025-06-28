@@ -11,23 +11,36 @@
     
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #f0f0f0; }
+    body { 
+        font-family: 'Inter', sans-serif; 
+        background-color: #312e2b; /* Koyu tema arkaplan */
+        color: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+    }
     
     .hidden { display: none !important; }
 
-    /* Ana Menü ve Lobi Stilleri */
+    /* --- Ana Menü ve Lobi --- */
     #mainMenu, #gameLobby {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         width: 100%;
-        max-width: 500px;
+        max-width: 450px;
         padding: 40px;
-        background-color: white;
+        background-color: #3c3a38; /* Koyu menü */
+        border: 1px solid #545250;
         border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         text-align: center;
+    }
+    #mainMenu h1, #gameLobby h2 {
+        color: #e6e6e6;
     }
     #mainMenu button {
         width: 100%;
@@ -35,37 +48,117 @@
         font-size: 1.1rem;
         font-weight: 600;
         margin-top: 15px;
+        border: none;
         border-radius: 10px;
-        transition: all 0.2s ease;
+        transition: all 0.2s ease-in-out;
+        color: white;
     }
     #mainMenu button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    }
+    #lobbyList {
+        width: 100%;
+    }
+    #lobbyList > div {
+        background-color: #4a4846;
+        color: #d1d1d1;
+    }
+    #lobbyList > div:hover {
+        background-color: #5a5856;
+    }
+    #backToMenuFromLobbyBtn {
+        background-color: #63615f !important;
     }
     
-    /* Oyun Alanı ve Diğer Stiller */
+    /* --- Oyun Alanı --- */
     .game-area { display: none; }
     .main-content-wrapper { display: flex; flex-direction: row; gap: 30px; align-items: flex-start; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1200px; }
-    .game-container { background-color: #fff; border: 4px solid #333; border-radius: 12px; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2); padding: 20px; display: flex; flex-direction: column; align-items: center; flex-shrink: 0; position: relative; }
-    .board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 400px; height: 400px; border: 2px solid #555; box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); border-radius: 8px; overflow: hidden; }
-    .square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 2.8rem; cursor: grab; user-select: none; transition: background-color 0.2s ease; position: relative; }
-    .light { background-color: #f0d9b5; }
-    .dark { background-color: #b58863; }
-    .selected { background-color: #a4c639 !important; }
-    .piece { line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); pointer-events: none; }
-    .piece.white { color: #ececec; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-    .info-panel, .game-info-panel { margin-top: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; color: #333; min-height: 25px; }
-    .message-box { color: #4a5568; font-size: 1rem; margin-top: 5px; min-height: 20px; font-weight: 500;}
-    .game-over-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.75); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-size: 2.5rem; font-weight: bold; text-align: center; border-radius: 12px; z-index: 10; }
-    .game-over-overlay button, #backToMenuButton { margin-top: 20px; padding: 12px 25px; font-size: 1.2rem; font-weight: bold; color: white; background-color: #007bff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; }
-    .game-over-overlay button:hover, #backToMenuButton:hover { background-color: #0056b3; }
-    .game-history-container { background-color: #fff; border: 2px solid #ccc; border-radius: 12px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); padding: 20px; width: 350px; display: flex; flex-direction: column; align-items: center; max-height: 550px; overflow-y: auto; }
+    .game-container { 
+        background-color: #3c3a38; 
+        border: 1px solid #545250;
+        border-radius: 12px; 
+        padding: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        position: relative; 
+    }
+    .board { 
+        display: grid; 
+        grid-template-columns: repeat(8, 1fr); 
+        width: 440px; 
+        height: 440px; 
+        border-radius: 8px; 
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .square { 
+        width: 100%; 
+        height: 100%; 
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .square .piece {
+        width: 85%;
+        height: 85%;
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        cursor: grab;
+        position: relative;
+        z-index: 5;
+    }
+    .light { background-color: #ebecd0; }
+    .dark { background-color: #779556; }
+
+    /* --- VURGULAMA STİLLERİ --- */
+    .selected-square::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(246, 246, 130, 0.6); /* Sarı vurgu */
+        z-index: 1;
+    }
+    .possible-move-dot::after {
+        content: '';
+        position: absolute;
+        width: 35%;
+        height: 35%;
+        background-color: rgba(0, 0, 0, 0.15);
+        border-radius: 50%;
+        z-index: 2;
+    }
+    .possible-capture-ring {
+        box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Paneller ve Butonlar */
+    .game-info-panel, .message-box {
+        color: #c7c7c7;
+    }
+    .game-over-overlay {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    .game-over-overlay button, #backToMenuButton {
+        background-color: #4a69bd;
+        transition: background-color 0.2s ease;
+    }
+    .game-over-overlay button:hover, #backToMenuButton:hover {
+        background-color: #5c7ee6;
+    }
 </style>
 </head>
 <body class="p-5 flex flex-col justify-center items-center min-h-screen">
     <div id="mainMenu">
         <h1 class="text-4xl font-bold text-gray-800 mb-2">Web Satranç</h1>
         <p id="currentUserIdDisplay" class="text-gray-500 font-medium text-sm mb-6">Kullanıcı: Yükleniyor...</p>
+        
         <button id="playVsBotBtn" class="bg-purple-600 text-white hover:bg-purple-700">Bilgisayara Karşı Oyna</button>
         <button id="createOnlineGameBtn" class="bg-green-600 text-white hover:bg-green-700">Online Oyun Oluştur</button>
         <button id="joinOnlineGameBtn" class="bg-blue-600 text-white hover:bg-blue-700">Açık Oyunları Gör</button>
@@ -74,10 +167,10 @@
 
     <div id="gameLobby" class="hidden">
         <h2 class="text-2xl font-bold text-center mb-4">Açık Oyunlar</h2>
-        <div id="lobbyList" class="space-y-2 h-64 overflow-y-auto p-2 bg-gray-50 border rounded">
-            <p class="text-gray-500 text-center">Oyunlar yükleniyor...</p>
+        <div id="lobbyList" class="space-y-2 h-64 overflow-y-auto p-2 bg-gray-800 border border-gray-700 rounded">
+            <!-- Açık oyunlar buraya yüklenecek -->
         </div>
-        <button id="backToMenuFromLobbyBtn" class="w-full mt-4 bg-gray-500 text-white p-3 rounded-lg hover:bg-gray-600">Ana Menüye Dön</button>
+        <button id="backToMenuFromLobbyBtn" class="w-full mt-4 bg-gray-600 text-white p-3 rounded-lg hover:bg-gray-700">Ana Menüye Dön</button>
     </div>
 
     <div class="game-area main-content-wrapper">
@@ -91,7 +184,7 @@
                 <button id="rematchButton">Tekrar Oyna</button>
                 <button id="mainMenuButton">Ana Menü</button>
             </div>
-            <button id="backToMenuButton" class="mt-4 bg-red-500 hover:bg-red-600">Ana Menüye Dön</button>
+            <button id="backToMenuButton" class="mt-4 bg-red-600 hover:bg-red-700">Ana Menüye Dön</button>
         </div>
         <div class="game-history-container hidden"></div>
     </div>
@@ -111,6 +204,7 @@
             measurementId: "G-ZC9ED69EB9"
         };
 
+        // Global Değişkenler
         let db, auth, userId;
         let chess, playerColor, gameId, gameUnsubscribe, lobbyUnsubscribe;
         let gameMode = null, audioStarted = false, fromSquare = null, currentGameStatus = 'ended';
@@ -125,16 +219,21 @@
         const gameOverOverlay = document.getElementById('gameOverOverlay');
         const gameOverMessage = document.getElementById('gameOverMessage');
 
-        const PIECE_SYMBOLS = { 'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟', 'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙' };
+        const PIECE_SVG_URLS = {
+            'wP': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', 'wN': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg',
+            'wB': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg', 'wR': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg',
+            'wQ': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg', 'wK': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg',
+            'bP': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg', 'bN': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg',
+            'bB': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg', 'bR': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg',
+            'bQ': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg', 'bK': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg'
+        };
         const moveSynth = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
         const captureSynth = new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.5 } }).toDestination();
 
         function startAudio() { if (!audioStarted) { Tone.start(); audioStarted = true; } }
 
         async function showMainMenu() {
-            if (gameId && currentGameStatus === 'waiting') {
-                await deleteDoc(doc(db, "games", gameId));
-            }
+            if (gameId && currentGameStatus === 'waiting') await deleteDoc(doc(db, "games", gameId));
             mainMenu.style.display = 'flex';
             gameArea.style.display = 'none';
             gameLobby.classList.add('hidden');
@@ -145,36 +244,26 @@
         }
 
         function showLobby() {
-            if (!userId) { alert("Lütfen önce Firebase bağlantısının kurulmasını bekleyin."); return; }
+            if (!userId) { alert("Lütfen Firebase bağlantısını bekleyin."); return; }
             mainMenu.style.display = 'none';
             gameLobby.classList.remove('hidden');
             gameLobby.style.display = 'flex';
-            
             const q = query(collection(db, "games"), where("status", "==", "waiting"), orderBy("createdAt", "desc"));
-            
             lobbyUnsubscribe = onSnapshot(q, (snapshot) => {
-                lobbyList.innerHTML = '';
-                if (snapshot.empty) {
-                    lobbyList.innerHTML = '<p class="text-gray-500 text-center">Açık oyun bulunmuyor.</p>';
-                    return;
-                }
+                lobbyList.innerHTML = '<p class="text-gray-400 text-center">Açık oyun bulunmuyor.</p>';
+                if (!snapshot.empty) lobbyList.innerHTML = '';
                 snapshot.forEach(gameDoc => {
                     const gameData = gameDoc.data();
-                    
-                    // *** DÜZELTME: Kendi oyununu gizleme mantığı geçici olarak kaldırıldı. ***
-                    // Bu satır, aynı bilgisayarda test yaparken soruna neden olabilir.
-                    // Gerçek dağıtımda bu kontrolü geri ekleyebilirsiniz:
-                    // if(gameData.creatorId === userId) return;
-
+                    if(gameData.creatorId === userId) return;
                     const gameElement = document.createElement('div');
-                    gameElement.className = 'p-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 flex justify-between items-center';
-                    gameElement.innerHTML = `<span>Oda: ${gameDoc.id.substring(0, 5)}...</span><span class="text-sm text-gray-600">Kurucu: ${gameData.creatorId.substring(0, 5)}...</span>`;
+                    gameElement.className = 'p-3 rounded-lg cursor-pointer flex justify-between items-center';
                     gameElement.onclick = () => joinOnlineGame(gameDoc.id);
+                    gameElement.innerHTML = `<span>Oda: ${gameDoc.id.substring(0, 5)}...</span><span class="text-sm text-gray-500">Kurucu: ${gameData.creatorId.substring(0,5)}...</span>`;
                     lobbyList.appendChild(gameElement);
                 });
             }, (error) => {
-                console.error("Lobi sorgusu hatası:", error);
-                lobbyList.innerHTML = `<p class="text-red-500 text-center">Oyunlar yüklenemedi. <br>Hata: ${error.message} <br>Lütfen Firestore indeksini ve kurallarını kontrol edin!</p>`;
+                console.error("Lobi hatası:", error);
+                lobbyList.innerHTML = `<p class="text-red-400 text-center">Oyunlar yüklenemedi. İndeks/Kural hatası olabilir.</p>`;
             });
         }
 
@@ -192,19 +281,45 @@
             const isFlipped = playerColor === 'black';
             for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
                 const row = isFlipped ? 7 - i : i; const col = isFlipped ? 7 - j : j;
-                const squareData = board[row][col]; const squareName = String.fromCharCode(97 + col) + (8 - row);
+                const squareData = board[row][col];
+                const squareName = String.fromCharCode(97 + col) + (8 - row);
                 const square = document.createElement('div');
                 square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
                 square.dataset.square = squareName;
                 if (squareData) {
-                    const pieceElement = document.createElement('span');
-                    pieceElement.className = `piece ${squareData.color === 'w' ? 'white' : ''}`;
-                    pieceElement.innerHTML = PIECE_SYMBOLS[squareData.color === 'w' ? squareData.type.toUpperCase() : squareData.type];
+                    const pieceKey = squareData.color + squareData.type.toUpperCase();
+                    const pieceElement = document.createElement('div');
+                    pieceElement.className = 'piece';
+                    pieceElement.style.backgroundImage = `url(${PIECE_SVG_URLS[pieceKey]})`;
                     square.appendChild(pieceElement);
                 }
                 chessBoardDiv.appendChild(square);
             }
             updateGameInfo();
+        }
+        
+        function clearHighlights() {
+            document.querySelectorAll('.square').forEach(s => {
+                s.classList.remove('selected-square', 'possible-capture-ring');
+                const dot = s.querySelector('.possible-move-dot');
+                if(dot) dot.remove();
+            });
+        }
+
+        function highlightPossibleMoves(sourceSquare) {
+            clearHighlights();
+            document.querySelector(`[data-square=${sourceSquare}]`).classList.add('selected-square');
+            const moves = chess.moves({ square: sourceSquare, verbose: true });
+            moves.forEach(move => {
+                const targetSquare = document.querySelector(`[data-square=${move.to}]`);
+                if (move.flags.includes('c') || move.flags.includes('e')) {
+                    targetSquare.classList.add('possible-capture-ring');
+                } else {
+                    const dot = document.createElement('div');
+                    dot.className = 'possible-move-dot';
+                    targetSquare.appendChild(dot);
+                }
+            });
         }
 
         function updateGameInfo() {
@@ -215,7 +330,7 @@
                 else if (chess.in_draw()) statusText = 'Oyun Berabere';
                 gameOverMessage.textContent = statusText;
             } else {
-                if (currentGameStatus === 'waiting') statusText = `Oda Kodu: ${gameId}. Rakip bekleniyor...`;
+                if (currentGameStatus === 'waiting') statusText = `Oda Kodu: ${gameId}`;
                 else {
                     statusText = `Sıra: ${chess.turn() === 'w' ? 'Beyaz' : 'Siyah'}`;
                     if (chess.in_check()) statusText += ' (Şah!)';
@@ -223,7 +338,10 @@
             }
             gameInfoPanel.textContent = statusText;
             let subText = '';
-            if (gameMode === 'online') subText = `Sen ${playerColor === 'white' ? 'Beyaz' : 'Siyah'} taşsın.`;
+            if (gameMode === 'online') {
+                subText = `Sen ${playerColor === 'white' ? 'Beyaz' : 'Siyah'} taşsın.`;
+                if(currentGameStatus === 'waiting') subText += ' Rakip bekleniyor...';
+            }
             messageBox.textContent = subText;
         }
 
@@ -256,13 +374,17 @@
             gameId = gId;
             gameUnsubscribe = onSnapshot(doc(db, "games", gId), (docSnap) => {
                 if (!docSnap.exists()) {
-                    if (currentGameStatus !== 'ended') alert("Oyun kurucu tarafından iptal edildi veya silindi!");
+                    if (currentGameStatus !== 'ended') alert("Oyun kurucu tarafından iptal edildi!");
                     showMainMenu(); return;
                 }
                 const gameData = docSnap.data();
                 if (currentGameStatus === 'waiting' && gameData.status === 'active') messageBox.textContent = "Rakip bulundu! Oyun başlıyor.";
                 currentGameStatus = gameData.status;
-                if (chess.fen() !== gameData.fen) { chess.load(gameData.fen); renderBoard(); }
+                if (chess.fen() !== gameData.fen) {
+                    chess.load(gameData.fen);
+                    clearHighlights();
+                    renderBoard();
+                }
                 updateGameInfo();
             });
         }
@@ -271,6 +393,7 @@
             const result = chess.move(move);
             if (result) {
                 (result.flags.includes('c') || result.flags.includes('e')) ? captureSynth.triggerAttackRelease("A3", "8n") : moveSynth.triggerAttackRelease("C4", "8n");
+                clearHighlights();
                 renderBoard();
                 if (gameMode === 'online') updateDoc(doc(db, "games", gameId), { fen: chess.fen() });
                 else if (gameMode === 'bot' && chess.turn() === 'b' && !chess.game_over()) setTimeout(makeBotMove, 250);
@@ -284,15 +407,22 @@
             const square = squareElement.dataset.square;
             const isMyTurn = (gameMode === 'local' || (gameMode === 'bot' && chess.turn() === 'w') || (gameMode === 'online' && ((playerColor === 'white' && chess.turn() === 'w') || (playerColor === 'black' && chess.turn() === 'b'))));
             if (!isMyTurn) return;
+
             if (!fromSquare) {
                 const piece = chess.get(square);
-                if (piece && piece.color === chess.turn()) fromSquare = square;
+                if (piece && piece.color === chess.turn()) {
+                    fromSquare = square;
+                    highlightPossibleMoves(square);
+                }
             } else {
                 const move = { from: fromSquare, to: square, promotion: 'q' };
                 if (!handleMove(move)) {
+                    clearHighlights();
                     const piece = chess.get(square);
-                    if (piece && piece.color === chess.turn()) fromSquare = square;
-                    else fromSquare = null;
+                    if (piece && piece.color === chess.turn()) {
+                        fromSquare = square;
+                        highlightPossibleMoves(square);
+                    } else fromSquare = null;
                 } else fromSquare = null;
             }
         }
@@ -307,16 +437,16 @@
         async function initializeFirebaseApp() {
             try {
                 const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
+                db = getFirestore(app); auth = getAuth(app);
                 await signInAnonymously(auth);
                 onAuthStateChanged(auth, (user) => {
                     if (user) { userId = user.uid; document.getElementById('currentUserIdDisplay').textContent = `Kullanıcı: Aktif`; } 
-                    else { document.getElementById('currentUserIdDisplay').textContent = "Kullanıcı: Oturum Açılamadı."; }
+                    else document.getElementById('currentUserIdDisplay').textContent = "Oturum Açılamadı.";
                 });
             } catch (error) { console.error("Firebase Hatası:", error); }
         }
 
+        // Olay Atamaları
         document.getElementById('playVsBotBtn').addEventListener('click', () => { startAudio(); startBotGame(); });
         document.getElementById('createOnlineGameBtn').addEventListener('click', () => { startAudio(); createOnlineGame(); });
         document.getElementById('joinOnlineGameBtn').addEventListener('click', () => { startAudio(); showLobby(); });
@@ -324,7 +454,7 @@
         document.getElementById('backToMenuFromLobbyBtn').addEventListener('click', showMainMenu);
         document.getElementById('backToMenuButton').addEventListener('click', showMainMenu);
         document.getElementById('mainMenuButton').addEventListener('click', showMainMenu);
-        document.getElementById('rematchButton').addEventListener('click', () => alert("Tekrar oynama özelliği yakında!"));
+        document.getElementById('rematchButton').addEventListener('click', () => alert("Yakında!"));
         chessBoardDiv.addEventListener('click', (e) => { const squareElement = e.target.closest('.square'); if (squareElement) onSquareClick(squareElement); });
         
         window.addEventListener('load', () => { initializeFirebaseApp(); showMainMenu(); });
