@@ -48,6 +48,24 @@
     .square .piece { width: 85%; height: 85%; background-size: contain; background-position: center; background-repeat: no-repeat; cursor: grab; position: relative; z-index: 5; }
     .light { background-color: #ebecd0; }
     .dark { background-color: #779556; }
+    
+    /* --- YENİ BİLDİRİM STİLİ --- */
+    #opponentLeftNotification {
+        position: absolute;
+        top: 40px; /* Üst oyuncu isminin hemen altına */
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(38, 36, 33, 0.9);
+        backdrop-filter: blur(5px);
+        color: var(--text-light);
+        padding: 10px 20px;
+        border-radius: 8px;
+        z-index: 20;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        border: 1px solid var(--bg-light);
+    }
+
 
     /* --- Vurgulama Stilleri --- */
     .selected-square::before { content: ''; position: absolute; inset: 0; background-color: rgba(246, 246, 130, 0.6); z-index: 1; }
@@ -57,29 +75,9 @@
     .possible-move-dot::after { content: ''; width: 30%; height: 30%; background-color: rgba(0, 0, 0, 0.2); border-radius: 50%; }
     .possible-capture-ring { box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.15); }
     
-    /* OYUN BİTİŞ EKRANI - DÜZENLENMİŞ TASARIM */
-    .game-over-overlay {
-        position: fixed; 
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        display: flex; 
-        flex-direction: column; 
-        justify-content: center; 
-        align-items: center; 
-        text-align: center;
-        opacity: 0; 
-        transform: scale(1.1);
-        transition: opacity 0.3s ease, transform 0.3s ease;
-        pointer-events: none; 
-        z-index: 100;
-    }
-    .game-over-overlay.visible {
-        opacity: 1; 
-        transform: scale(1); 
-        pointer-events: auto;
-    }
+    /* OYUN BİTİŞ EKRANI */
+    .game-over-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; opacity: 0; transform: scale(1.1); transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none; z-index: 100; }
+    .game-over-overlay.visible { opacity: 1; transform: scale(1); pointer-events: auto; }
     .game-over-overlay h2 { font-size: 2.8rem; font-weight: 700; margin-bottom: 4px; color: #fff; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
     .game-over-overlay p { font-size: 1.2rem; color: #d1d1d1; margin-bottom: 30px; }
     .game-over-overlay #gameOverIcon { font-size: 4rem; margin-bottom: 1rem; text-shadow: 0 0 15px rgba(0,0,0,0.4); }
@@ -117,17 +115,16 @@
 
     <div class="game-area main-content-wrapper">
         <div class="game-container">
+            <div id="opponentLeftNotification" class="hidden">Rakibiniz oyundan ayrıldı. Yeni rakip bekleniyor...</div>
             <div id="playerTop" class="text-center font-semibold mb-2 h-6">Oyuncu 2 (Siyah)</div>
             <div class="board" id="chessBoard"></div>
             <div id="playerBottom" class="text-center font-semibold mt-2 h-6">Oyuncu 1 (Beyaz)</div>
             <div class="game-info-panel" id="gameInfoPanel">Sıra: Beyaz</div>
             <button id="backToMenuButton" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg">Ana Menüye Dön</button>
         </div>
-        <!-- Diğer oyun elemanları buraya gelebilir, mesela hamle listesi -->
         <div class="game-history-container hidden"></div>
     </div>
 
-    <!-- Oyun bitiş ekranı, diğer tüm elementlerden sonra, body'nin doğrudan içinde yer alıyor. -->
     <div id="gameOverOverlay" class="game-over-overlay hidden">
         <div id="gameOverIcon"></div>
         <h2 id="gameOverTitle"></h2>
@@ -143,7 +140,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase yapılandırmanızı buraya yapıştırın
         const firebaseConfig = {
             apiKey: "AIzaSyAcMo_abVNc5XMXkeV594HCw4REwFohHoU",
             authDomain: "chess-788b3.firebaseapp.com",
@@ -164,6 +160,7 @@
         const lobbyList = document.getElementById('lobbyList');
         const gameArea = document.querySelector('.game-area');
         const chessBoardDiv = document.getElementById('chessBoard');
+        const opponentLeftNotification = document.getElementById('opponentLeftNotification');
         const playerTop = document.getElementById('playerTop');
         const playerBottom = document.getElementById('playerBottom');
         const gameInfoPanel = document.getElementById('gameInfoPanel');
@@ -185,23 +182,27 @@
 
         function startAudio() { if (!audioStarted) { Tone.start(); audioStarted = true; } }
 
-        // --- YENİ & GÜNCELLENMİŞ FONKSİYON ---
+        // --- GÜNCELLENMİŞ FONKSİYON ---
         async function showMainMenu() {
-            // Online bir oyundan çıkılıyorsa, durumu veritabanında güncelle
-            if (gameMode === 'online' && gameId && (currentGameStatus === 'active' || currentGameStatus === 'waiting')) {
+            // Online bir oyundan çıkılıyorsa, yeni asimetrik mantığı uygula
+            if (gameMode === 'online' && gameId) {
                 const gameRef = doc(db, "games", gameId);
                 try {
                     const gameSnap = await getDoc(gameRef);
                     if (gameSnap.exists()) {
                         const gameData = gameSnap.data();
-                        // Rakip beklenirken oyundan çıkılırsa, oyunu tamamen sil
-                        if (gameData.status === 'waiting' && gameData.creatorId === userId) {
+                        // EĞER OYUNU KURAN KİŞİ AYRILIRSA, ODAYI SİL
+                        if (gameData.creatorId === userId) {
                             await deleteDoc(gameRef);
                         } 
-                        // Aktif bir oyun sırasında çıkılırsa, oyunu 'terk edilmiş' olarak işaretle
-                        else if (gameData.status === 'active') {
-                            const winnerColor = (gameData.creatorId === userId) ? 'black' : 'white';
-                            await updateDoc(gameRef, { status: 'abandoned', winner: winnerColor });
+                        // EĞER RAKİP AYRILIRSA, ODAYI BEKLEME MODUNA AL
+                        else if (gameData.opponentId === userId) {
+                            await updateDoc(gameRef, {
+                                status: 'waiting',
+                                opponentId: null,
+                                opponentName: null,
+                                fen: new Chess().fen() // Tahtayı sıfırla
+                            });
                         }
                     }
                 } catch(error) {
@@ -214,6 +215,7 @@
             gameArea.style.display = 'none';
             createGameModal.classList.add('hidden');
             gameLobby.classList.add('hidden');
+            opponentLeftNotification.classList.add('hidden'); // Bildirimi gizle
             if (gameUnsubscribe) gameUnsubscribe();
             if (lobbyUnsubscribe) lobbyUnsubscribe();
             
@@ -241,7 +243,7 @@
                     const gameElement = document.createElement('div');
                     gameElement.className = 'p-3 rounded-lg cursor-pointer flex justify-between items-center';
                     gameElement.onclick = () => joinOnlineGame(gameDoc.id, gameData.password);
-                    const lockIcon = gameData.password ? '' : ''; // Kilit emojisi
+                    const lockIcon = gameData.password ? '' : '';
                     gameElement.innerHTML = `<span>${gameData.roomName || 'İsimsiz Oda'} ${lockIcon}</span><span class="text-sm text-gray-400">Kurucu: ${gameData.creatorName || 'Misafir'}</span>`;
                     lobbyList.appendChild(gameElement);
                 });
@@ -349,13 +351,14 @@
             }
         }
         
-        // --- YENİ YARDIMCI FONKSİYON ---
-        function showGameOver(title, message, icon, playWinSound = false, playLossSound = false) {
+        function showGameOver(title, message, icon) {
             currentGameStatus = 'ended';
             
-            if (playWinSound) winSynth.triggerAttackRelease(["C4", "E4", "G4"], "0.5");
-            else if (playLossSound) lossSynth.triggerAttackRelease("C3", "1");
-            else drawSynth.triggerAttackRelease("A3", "1");
+            if (title.includes("Şah Mat")) {
+                winSynth.triggerAttackRelease(["C4", "E4", "G4"], "0.5");
+            } else {
+                drawSynth.triggerAttackRelease("A3", "1");
+            }
 
             gameOverIcon.textContent = icon;
             gameOverTitle.textContent = title;
@@ -369,16 +372,12 @@
             if (!chess.game_over()) return;
             
             const winnerColor = chess.turn() === 'w' ? 'Siyah' : 'Beyaz';
-            let title = '', message = '', icon = '', isWin = false;
+            let title = '', message = '', icon = '';
 
             if (chess.in_checkmate()) {
                 title = "Şah Mat!"; 
                 message = `Kazanan: ${winnerColor}`; 
                 icon = '👑';
-                if (gameMode === 'online') isWin = (winnerColor.toLowerCase() === playerColor);
-                else if (gameMode === 'bot') isWin = (winnerColor === 'Beyaz');
-                
-                showGameOver(title, message, icon, isWin, !isWin);
             } else {
                 title = "Berabere!"; 
                 icon = '🤝';
@@ -386,9 +385,8 @@
                 else if (chess.in_threefold_repetition()) message = "Üç tekrar kuralı nedeniyle berabere.";
                 else if (chess.insufficient_material()) message = "Yetersiz materyal nedeniyle berabere.";
                 else message = "Oyun berabere sonuçlandı.";
-
-                showGameOver(title, message, icon);
             }
+            showGameOver(title, message, icon);
         }
 
         async function createOnlineGame(roomName, password) {
@@ -398,7 +396,7 @@
             const gameRef = await addDoc(collection(db, "games"), {
                 fen: new Chess().fen(), status: 'waiting', createdAt: serverTimestamp(),
                 creatorId: userId, creatorName: guestName, opponentId: null, opponentName: null,
-                roomName: roomName, password: password || null, rematchRequestedBy: null, winner: null
+                roomName: roomName, password: password || null, rematchRequestedBy: null
             });
             gameId = gameRef.id;
             listenToGame(gameId);
@@ -418,61 +416,62 @@
                 showGameUI('online');
                 listenToGame(gameId);
             } else { 
-                if (!gameSnap.exists()) alert("Oyun bulunamadı!");
-                else if (gameSnap.data().creatorId === userId) alert("Kendi oyununuza katılamazsınız!");
-                else alert("Oyun dolu veya başlamış!");
+                alert(gameSnap.exists() ? "Oyun dolu veya başlamış!" : "Oyun bulunamadı!");
                 showLobby(); 
             }
         }
-
+        
+        // --- GÜNCELLENMİŞ FONKSİYON ---
         function listenToGame(gId) {
             gameId = gId;
             gameUnsubscribe = onSnapshot(doc(db, "games", gId), (docSnap) => {
+                // DURUM 1: ODA SİLİNDİ (KURUCU AYRILDI)
                 if (!docSnap.exists()) {
-                    if (currentGameStatus !== 'ended') alert("Oyun kurucu tarafından iptal edildi veya bir hata oluştu!");
-                    showMainMenu();
+                    if (gameMode === 'online') { // Sadece online moddayken bu uyarıyı göster
+                        alert("Oda kurucusu oyundan ayrıldı. Oda kapatıldı.");
+                        showMainMenu();
+                    }
                     return;
                 }
-                const gameData = docSnap.data();
                 
-                // --- OYUNCU TERK ETME KONTROLÜ ---
-                if (gameData.status === 'abandoned') {
-                    const isWinner = playerColor === gameData.winner;
-                    const message = isWinner ? `Rakibiniz oyunu terk etti. Galip sizsiniz!` : "Oyundan ayrıldığınız için kaybettiniz.";
-                    showGameOver("Oyun Bitti", message, isWinner ? '🏆' : '👋', isWinner, !isWinner);
-                    if(gameUnsubscribe) gameUnsubscribe(); // Dinleyiciyi durdur
-                    return;
+                const gameData = docSnap.data();
+
+                // DURUM 2: RAKİP OYUNDAN AYRILDI (OYUN 'active' den 'waiting'e döndü)
+                if (currentGameStatus === 'active' && gameData.status === 'waiting') {
+                    opponentLeftNotification.classList.remove('hidden'); // Bildirimi göster
+                    setTimeout(() => opponentLeftNotification.classList.add('hidden'), 5000); // 5 saniye sonra gizle
                 }
 
+                // DURUM 3: YENİ RAKİP GELDİ (OYUN 'waiting' den 'active'e döndü)
                 if (currentGameStatus === 'waiting' && gameData.status === 'active') {
+                    opponentLeftNotification.classList.add('hidden'); // Varsa bildirimi hemen gizle
                     console.log("Rakip bulundu! Oyun başlıyor.");
-                    currentGameStatus = 'active'; // Durumu hemen güncelle
                 }
+                
+                // Genel durum güncellemesi
+                currentGameStatus = gameData.status;
 
+                // Tahta ve oyun bilgilerini güncelle
                 if (chess.fen() !== gameData.fen) {
                     chess.load(gameData.fen);
-                    clearHighlights();
                     renderBoard();
-                    if (chess.in_check()) {
-                        checkSynth.triggerAttackRelease("A5", "0.2");
-                        highlightCheck();
-                    }
+                    if (chess.in_check()) highlightCheck();
                 }
-                
                 updateGameInfo(gameData);
 
+                // Rematch kabul edildiğinde oyun sonu ekranını kapat
                 if (gameData.status === 'active' && !gameOverOverlay.classList.contains('hidden')) {
                     gameOverOverlay.classList.remove('visible');
-                    setTimeout(() => { gameOverOverlay.classList.add('hidden'); }, 300);
-                    currentGameStatus = 'active';
+                    setTimeout(() => gameOverOverlay.classList.add('hidden'), 300);
                 }
 
-                if (gameData.status === 'ended' && currentGameStatus !== 'ended') {
+                // Oyun bittiğinde oyun sonu ekranını göster
+                if (gameData.status === 'ended' && !chess.game_over()) {
+                    chess.load(gameData.fen); // Son durumu yükle
                     checkGameOver();
                 }
             });
         }
-
 
         function handleMove(move) {
             const result = chess.move(move);
@@ -491,15 +490,14 @@
                     setTimeout(makeBotMove, 250);
                 }
                 
-                checkGameOver();
+                if (chess.game_over()) checkGameOver();
             }
             return result;
         }
 
         function onSquareClick(squareElement) {
             startAudio();
-            if (currentGameStatus !== 'active' && !(gameMode === 'local' && currentGameStatus !== 'ended')) return;
-
+            if (currentGameStatus !== 'active' && !(gameMode === 'local' && !chess.game_over())) return;
 
             const isMyTurn = (gameMode === 'local') || 
                              (gameMode === 'bot' && chess.turn() === 'w') ||
@@ -519,9 +517,7 @@
                     if (piece && piece.color === chess.turn()) {
                         fromSquare = square;
                         highlightPossibleMoves(square);
-                    } else {
-                        fromSquare = null;
-                    }
+                    } else fromSquare = null;
                 }
             } else { 
                 if (piece && piece.color === chess.turn()) {
@@ -538,13 +534,12 @@
             handleMove(move);
         }
         
-        function startLocalGame() { playerColor = 'white'; showGameUI('local'); currentGameStatus = 'active'; }
-        function startBotGame() { playerColor = 'white'; showGameUI('bot'); currentGameStatus = 'active'; }
+        function startLocalGame() { showGameUI('local'); currentGameStatus = 'active'; }
+        function startBotGame() { showGameUI('bot'); currentGameStatus = 'active'; }
 
         async function handleRematch() {
-            if(gameMode === 'local' || gameMode === 'bot') {
-                showGameUI(gameMode);
-                currentGameStatus = 'active';
+            if(gameMode !== 'online') {
+                showGameUI(gameMode); currentGameStatus = 'active';
                 gameOverOverlay.classList.remove('visible');
                 setTimeout(() => gameOverOverlay.classList.add('hidden'), 300);
                 return;
@@ -557,10 +552,7 @@
 
             if(gameData.rematchRequestedBy && gameData.rematchRequestedBy !== userId) {
                 await updateDoc(gameRef, { 
-                    fen: new Chess().fen(), 
-                    status: 'active', 
-                    rematchRequestedBy: null,
-                    winner: null
+                    fen: new Chess().fen(), status: 'active', rematchRequestedBy: null 
                 });
             } else if (!gameData.rematchRequestedBy) {
                 await updateDoc(gameRef, { rematchRequestedBy: userId });
@@ -577,13 +569,11 @@
                         userId = user.uid; 
                         guestName = `Misafir_${userId.substring(0, 5)}`;
                         document.getElementById('currentUserIdDisplay').textContent = `Kullanıcı: ${guestName}`;
-                    } 
-                    else { document.getElementById('currentUserIdDisplay').textContent = "Oturum Açılamadı."; }
+                    } else { document.getElementById('currentUserIdDisplay').textContent = "Oturum Açılamadı."; }
                 });
             } catch (error) { console.error("Firebase Hatası:", error); }
         }
 
-        // Event Listeners
         document.getElementById('playVsBotBtn').addEventListener('click', () => { startAudio(); startBotGame(); });
         document.getElementById('createOnlineGameBtn').addEventListener('click', () => { startAudio(); showCreateGameModal(); });
         document.getElementById('confirmCreateGameBtn').addEventListener('click', () => {
@@ -602,10 +592,7 @@
         rematchButton.addEventListener('click', handleRematch);
         chessBoardDiv.addEventListener('click', (e) => { const el = e.target.closest('.square'); if (el) onSquareClick(el); });
         
-        window.addEventListener('load', () => { 
-            initializeFirebaseApp(); 
-            showMainMenu(); 
-        });
+        window.addEventListener('load', () => { initializeFirebaseApp(); showMainMenu(); });
     </script>
 </body>
 </html>
