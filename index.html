@@ -123,9 +123,11 @@
             <div class="game-info-panel" id="gameInfoPanel">Sıra: Beyaz</div>
             <button id="backToMenuButton" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg">Ana Menüye Dön</button>
         </div>
+        <!-- Diğer oyun elemanları buraya gelebilir, mesela hamle listesi -->
         <div class="game-history-container hidden"></div>
     </div>
 
+    <!-- Oyun bitiş ekranı, diğer tüm elementlerden sonra, body'nin doğrudan içinde yer alıyor. -->
     <div id="gameOverOverlay" class="game-over-overlay hidden">
         <div id="gameOverIcon"></div>
         <h2 id="gameOverTitle"></h2>
@@ -141,6 +143,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase yapılandırmanızı buraya yapıştırın
         const firebaseConfig = {
             apiKey: "AIzaSyAcMo_abVNc5XMXkeV594HCw4REwFohHoU",
             authDomain: "chess-788b3.firebaseapp.com",
@@ -171,6 +174,7 @@
         const rematchButton = document.getElementById('rematchButton');
         const mainMenuButton = document.getElementById('mainMenuButton');
 
+
         const PIECE_SVG_URLS = { 'wP': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', 'wN': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg', 'wB': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg', 'wR': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg', 'wQ': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg', 'wK': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg', 'bP': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg', 'bN': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg', 'bB': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg', 'bR': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg', 'bQ': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg', 'bK': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg' };
         const moveSynth = new Tone.Synth().toDestination();
         const captureSynth = new Tone.MembraneSynth().toDestination();
@@ -182,9 +186,7 @@
         function startAudio() { if (!audioStarted) { Tone.start(); audioStarted = true; } }
 
         async function showMainMenu() {
-            if (gameMode === 'online' && gameId && currentGameStatus === 'waiting') {
-                await deleteDoc(doc(db, "games", gameId));
-            }
+            if (gameId && currentGameStatus === 'waiting') await deleteDoc(doc(db, "games", gameId));
             mainMenu.style.display = 'flex';
             gameArea.style.display = 'none';
             createGameModal.classList.add('hidden');
@@ -192,10 +194,11 @@
             if (gameUnsubscribe) gameUnsubscribe();
             if (lobbyUnsubscribe) lobbyUnsubscribe();
             
+            // Animasyonla gizle
             gameOverOverlay.classList.remove('visible');
             setTimeout(() => { gameOverOverlay.classList.add('hidden'); }, 300);
 
-            gameMode = null; gameId = null; currentGameStatus = 'ended';
+            gameMode = null; gameId = null;
         }
 
         function showCreateGameModal() { createGameModal.classList.remove('hidden'); }
@@ -216,7 +219,7 @@
                     const gameElement = document.createElement('div');
                     gameElement.className = 'p-3 rounded-lg cursor-pointer flex justify-between items-center hover:bg-gray-700';
                     gameElement.onclick = () => joinOnlineGame(gameDoc.id, gameData.password);
-                    const lockIcon = gameData.password ? '' : '';
+                    const lockIcon = gameData.password ? '' : ''; // Lock emoji
                     gameElement.innerHTML = `<span>${gameData.roomName || 'İsimsiz Oda'} ${lockIcon}</span><span class="text-sm text-gray-400">Kurucu: ${gameData.creatorName || 'Misafir'}</span>`;
                     lobbyList.appendChild(gameElement);
                 });
@@ -315,31 +318,34 @@
             
             rematchButton.textContent = "Tekrar Oyna";
             rematchButton.classList.remove('rematch-requested');
-            rematchButton.disabled = false;
             if(gameMode === 'online' && gameData.rematchRequestedBy) {
                 if(gameData.rematchRequestedBy !== userId) {
                     rematchButton.textContent = "Tekrar Oyna (Kabul Et)";
                     rematchButton.classList.add('rematch-requested');
                 } else {
                     rematchButton.textContent = "İstek Gönderildi";
-                    rematchButton.disabled = true; // Kendi isteğini iptal etme eklenene kadar butonu kitle
                 }
             }
         }
         
         function checkGameOver() {
             if (!chess.game_over()) return;
-            
             currentGameStatus = 'ended';
             const winnerColor = chess.turn() === 'w' ? 'Siyah' : 'Beyaz';
             let title = '', message = '', icon = '', isWin = false;
 
             if (chess.in_checkmate()) {
-                title = "Şah Mat!"; message = `Kazanan: ${winnerColor}`; icon = '👑';
-                if (gameMode === 'online') isWin = (winnerColor.toLowerCase() === playerColor);
-                else if (gameMode === 'bot') isWin = (winnerColor === 'Beyaz');
+                title = "Şah Mat!"; 
+                message = `Kazanan: ${winnerColor}`; 
+                icon = '👑';
+                if (gameMode === 'online') {
+                    isWin = (winnerColor.toLowerCase() === playerColor);
+                } else if (gameMode === 'bot') {
+                    isWin = (winnerColor === 'Beyaz');
+                }
             } else {
-                title = "Berabere!"; icon = '🤝';
+                title = "Berabere!"; 
+                icon = '🤝';
                 if (chess.in_stalemate()) message = "Pat durumu nedeniyle berabere.";
                 else if (chess.in_threefold_repetition()) message = "Üç tekrar kuralı nedeniyle berabere.";
                 else if (chess.insufficient_material()) message = "Yetersiz materyal nedeniyle berabere.";
@@ -354,14 +360,16 @@
             gameOverTitle.textContent = title;
             gameOverMessage.textContent = message;
             
-            if (gameOverOverlay.classList.contains('hidden')) {
-                gameOverOverlay.classList.remove('hidden');
-                setTimeout(() => { gameOverOverlay.classList.add('visible'); }, 10);
-            }
+            gameOverOverlay.classList.remove('hidden');
+            // Kısa bir gecikme sonrası 'visible' class'ını ekleyerek CSS animasyonunu tetikle
+            setTimeout(() => {
+                gameOverOverlay.classList.add('visible');
+            }, 10);
         }
 
         async function createOnlineGame(roomName, password) {
             playerColor = 'white'; 
+            currentGameStatus = 'waiting';
             showGameUI('online');
             const gameRef = await addDoc(collection(db, "games"), {
                 fen: new Chess().fen(), status: 'waiting', createdAt: serverTimestamp(),
@@ -393,19 +401,22 @@
             }
         }
 
-        // *** YENİDEN DÜZENLENMİŞ VE DAHA KARARLI listenToGame FONKSİYONU ***
         function listenToGame(gId) {
             gameId = gId;
-            if (gameUnsubscribe) gameUnsubscribe(); // Önceki listener'ı temizle
             gameUnsubscribe = onSnapshot(doc(db, "games", gId), (docSnap) => {
                 if (!docSnap.exists()) {
-                    alert("Oyun sunucudan silindi veya rakip oyundan ayrıldı. Ana menüye yönlendiriliyorsunuz.");
+                    if (currentGameStatus !== 'ended') alert("Oyun kurucu tarafından iptal edildi veya bir hata oluştu!");
                     showMainMenu();
                     return;
                 }
                 const gameData = docSnap.data();
+                
+                if (currentGameStatus === 'waiting' && gameData.status === 'active') {
+                    // Sadece rakip katıldığında bir kere log basar
+                    console.log("Rakip bulundu! Oyun başlıyor.");
+                }
+                currentGameStatus = gameData.status;
 
-                // 1. Tahtayı Firestore'daki FEN ile senkronize et
                 if (chess.fen() !== gameData.fen) {
                     chess.load(gameData.fen);
                     clearHighlights();
@@ -415,26 +426,24 @@
                         highlightCheck();
                     }
                 }
+                
+                updateGameInfo(gameData);
 
-                // 2. Arayüzü Firestore'daki 'status'e göre yönet (TEK DOĞRULUK KAYNAĞI)
-                if (gameData.status === 'ended') {
-                    // Oyun bittiyse, oyun sonu ekranını göster.
-                    checkGameOver();
-                } else { // status 'active' veya 'waiting' ise
-                    // Oyun devam ediyorsa, oyun sonu ekranının kapalı olduğundan emin ol.
-                    currentGameStatus = gameData.status;
-                    if (!gameOverOverlay.classList.contains('hidden')) {
-                        gameOverOverlay.classList.remove('visible');
-                        setTimeout(() => {
-                            gameOverOverlay.classList.add('hidden');
-                        }, 300); // CSS animasyon süresiyle eşleşmeli
-                    }
+                // *** IŞTE DÜZELTME BURADA ***
+                // Eğer oyun veritabanında 'active' durumuna döndüyse (rematch kabul edildi)
+                // ve bizim ekranımızda hala oyun sonu ekranı açıksa, onu kapat.
+                if (gameData.status === 'active' && !gameOverOverlay.classList.contains('hidden')) {
+                    gameOverOverlay.classList.remove('visible');
+                    setTimeout(() => { gameOverOverlay.classList.add('hidden'); }, 300);
                 }
 
-                // 3. Oyuncu isimleri, sıra bilgisi, rövanş butonu gibi diğer bilgileri güncelle
-                updateGameInfo(gameData);
+                // Eğer oyun bittiyse (veritabanı status'ü 'ended' ise) oyun sonu ekranını göster.
+                if (gameData.status === 'ended') {
+                    checkGameOver();
+                }
             });
         }
+
 
         function handleMove(move) {
             const result = chess.move(move);
@@ -449,13 +458,11 @@
                 
                 if (gameMode === 'online') {
                     updateDoc(doc(db, "games", gameId), { fen: chess.fen(), status: chess.game_over() ? 'ended' : 'active' });
+                } else if (gameMode === 'bot' && chess.turn() === 'b' && !chess.game_over()) {
+                    setTimeout(makeBotMove, 250);
                 }
                 
-                // Hamleden sonra oyun bitiş durumunu SADECE yerel ve bot oyunları için kontrol et.
-                // Online oyunun bitişi `listenToGame` tarafından yönetilir.
-                if (gameMode !== 'online') {
-                    checkGameOver();
-                }
+                checkGameOver(); // Hamle sonrası oyun bitişini kontrol et
             }
             return result;
         }
@@ -474,10 +481,10 @@
             const piece = chess.get(square);
 
             if (fromSquare) {
-                const move = { from: fromSquare, to: square, promotion: 'q' };
+                const move = { from: fromSquare, to: square, promotion: 'q' }; // Otomatik vezir promosyonu
                 if (handleMove(move)) {
                     fromSquare = null;
-                } else { 
+                } else { // Geçersiz hamle, yeni taşı seç
                     clearHighlights();
                     if (piece && piece.color === chess.turn()) {
                         fromSquare = square;
@@ -486,7 +493,7 @@
                         fromSquare = null;
                     }
                 }
-            } else { 
+            } else { // İlk tıklama, taş seçme
                 if (piece && piece.color === chess.turn()) {
                     fromSquare = square;
                     highlightPossibleMoves(square);
@@ -506,29 +513,30 @@
 
         async function handleRematch() {
             if(gameMode === 'local' || gameMode === 'bot') {
-                showGameUI(gameMode);
+                showGameUI(gameMode); // Oyunu sıfırdan başlat
                 gameOverOverlay.classList.remove('visible');
                 setTimeout(() => gameOverOverlay.classList.add('hidden'), 300);
                 return;
             }
 
-            // Online oyun için rövanş mantığı
-            if (!gameId) return;
             const gameRef = doc(db, "games", gameId);
             const gameSnap = await getDoc(gameRef);
             if(!gameSnap.exists()) return;
             const gameData = gameSnap.data();
 
             if(gameData.rematchRequestedBy && gameData.rematchRequestedBy !== userId) {
-                // Rakibin isteğini KABUL ET: oyunu sıfırla ve durumu 'active' yap.
+                // Rakibin isteğini kabul et ve oyunu sıfırla
                 await updateDoc(gameRef, { 
                     fen: new Chess().fen(), 
                     status: 'active', 
                     rematchRequestedBy: null 
                 });
-                // Arayüzün güncellenmesi `listenToGame` tarafından otomatik olarak yapılacak.
+                // Not: Ekranın kapanması artık listenToGame tarafından yönetiliyor.
+                // Bu nedenle buradaki gizleme kodunu kaldırabiliriz ama güvenlik için kalabilir.
+                gameOverOverlay.classList.remove('visible');
+                setTimeout(() => { gameOverOverlay.classList.add('hidden'); }, 300);
             } else if (!gameData.rematchRequestedBy) {
-                // İlk defa İSTEK GÖNDER.
+                // İlk defa istek gönder
                 await updateDoc(gameRef, { rematchRequestedBy: userId });
             }
         }
@@ -537,19 +545,16 @@
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app); auth = getAuth(app);
-                onAuthStateChanged(auth, async (user) => {
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, (user) => {
                     if (user) { 
                         userId = user.uid; 
                         guestName = `Misafir_${userId.substring(0, 5)}`;
                         document.getElementById('currentUserIdDisplay').textContent = `Kullanıcı: ${guestName}`;
-                    } else { 
-                        await signInAnonymously(auth);
-                    }
+                    } 
+                    else { document.getElementById('currentUserIdDisplay').textContent = "Oturum Açılamadı."; }
                 });
-            } catch (error) { 
-                console.error("Firebase Hatası:", error); 
-                document.getElementById('currentUserIdDisplay').textContent = "Bağlantı Hatası.";
-            }
+            } catch (error) { console.error("Firebase Hatası:", error); }
         }
 
         // Event Listeners
