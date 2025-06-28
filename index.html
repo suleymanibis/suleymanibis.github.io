@@ -19,6 +19,7 @@
     body { 
         font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: var(--text-light);
         display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px;
+        overflow: hidden; /* Sayfa kaymasını engelle */
     }
     .hidden { display: none !important; }
     button { transition: all 0.2s ease-in-out; }
@@ -42,7 +43,7 @@
     .game-area { display: none; }
     .main-content-wrapper { display: flex; flex-direction: row; gap: 30px; align-items: flex-start; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1200px; }
     .game-container { background-color: var(--bg-medium); border: 1px solid #545250; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
-    .board { width: 440px; height: 440px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+    .board { display: grid; grid-template-columns: repeat(8, 1fr); width: 440px; height: 440px; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
     .square { width: 100%; height: 100%; position: relative; display: flex; align-items: center; justify-content: center; }
     .square .piece { width: 85%; height: 85%; background-size: contain; background-position: center; background-repeat: no-repeat; cursor: grab; position: relative; z-index: 5; }
     .light { background-color: #ebecd0; }
@@ -50,17 +51,39 @@
 
     /* --- Vurgulama Stilleri --- */
     .selected-square::before { content: ''; position: absolute; inset: 0; background-color: rgba(246, 246, 130, 0.6); z-index: 1; }
-    .in-check::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,50,50,0.7) 30%, rgba(255,50,50,0) 70%); z-index: 2; }
+    .in-check::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,50,50,0.7) 30%, rgba(255,50,50,0) 70%); z-index: 2; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     .possible-move-dot { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: absolute; z-index: 2; }
     .possible-move-dot::after { content: ''; width: 30%; height: 30%; background-color: rgba(0, 0, 0, 0.2); border-radius: 50%; }
     .possible-capture-ring { box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.15); }
     
-    /* Paneller ve Butonlar */
-    .game-info-panel, .message-box { color: var(--text-dark); }
-    .game-over-overlay { background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-    .game-over-overlay h2 { font-size: 2.5rem; font-weight: 700; margin-bottom: 8px; }
-    .game-over-overlay p { font-size: 1.2rem; color: var(--text-dark); margin-bottom: 20px; }
-    .game-over-overlay button { background-color: var(--accent-blue); }
+    /* OYUN BİTİŞ EKRANI - DÜZENLENMİŞ TASARIM */
+    .game-over-overlay {
+        position: fixed; 
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: flex; 
+        flex-direction: column; 
+        justify-content: center; 
+        align-items: center; 
+        text-align: center;
+        opacity: 0; 
+        transform: scale(1.1);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        pointer-events: none; 
+        z-index: 100;
+    }
+    .game-over-overlay.visible {
+        opacity: 1; 
+        transform: scale(1); 
+        pointer-events: auto;
+    }
+    .game-over-overlay h2 { font-size: 2.8rem; font-weight: 700; margin-bottom: 4px; color: #fff; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+    .game-over-overlay p { font-size: 1.2rem; color: #d1d1d1; margin-bottom: 30px; }
+    .game-over-overlay #gameOverIcon { font-size: 4rem; margin-bottom: 1rem; text-shadow: 0 0 15px rgba(0,0,0,0.4); }
+    .game-over-overlay button { background-color: var(--accent-blue); padding: 12px 28px; border-radius: 8px; font-weight: 600; color: white; border: none; }
     .game-over-overlay button.rematch-requested { background-color: var(--accent-green); }
     </style>
 </head>
@@ -94,18 +117,24 @@
 
     <div class="game-area main-content-wrapper">
         <div class="game-container">
-            <div id="playerTop" class="text-center font-semibold mb-2"></div>
+            <div id="playerTop" class="text-center font-semibold mb-2 h-6">Oyuncu 2 (Siyah)</div>
             <div class="board" id="chessBoard"></div>
-            <div id="playerBottom" class="text-center font-semibold mt-2"></div>
-            <div class="game-info-panel" id="gameInfoPanel"></div>
-            <div class="message-box" id="messageBox"></div>
-            <div id="gameOverOverlay" class="absolute inset-0 rounded-lg hidden">
-                <h2 id="gameOverTitle">Oyun Bitti!</h2>
-                <p id="gameOverMessage"></p>
-                <button id="rematchButton">Tekrar Oyna</button>
-                <button id="mainMenuButton">Ana Menü</button>
-            </div>
-            <button id="backToMenuButton" class="mt-4 bg-red-600 text-white">Ana Menüye Dön</button>
+            <div id="playerBottom" class="text-center font-semibold mt-2 h-6">Oyuncu 1 (Beyaz)</div>
+            <div class="game-info-panel" id="gameInfoPanel">Sıra: Beyaz</div>
+            <button id="backToMenuButton" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg">Ana Menüye Dön</button>
+        </div>
+        <!-- Diğer oyun elemanları buraya gelebilir, mesela hamle listesi -->
+        <div class="game-history-container hidden"></div>
+    </div>
+
+    <!-- DÜZELTME: Oyun bitiş ekranı, diğer tüm elementlerden sonra, body'nin doğrudan içinde yer alıyor. -->
+    <div id="gameOverOverlay" class="game-over-overlay hidden">
+        <div id="gameOverIcon"></div>
+        <h2 id="gameOverTitle"></h2>
+        <p id="gameOverMessage"></p>
+        <div class="flex gap-4 mt-4">
+            <button id="rematchButton">Tekrar Oyna</button>
+            <button id="mainMenuButton">Ana Menü</button>
         </div>
     </div>
 
@@ -114,6 +143,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase yapılandırmanızı buraya yapıştırın
         const firebaseConfig = {
             apiKey: "AIzaSyAcMo_abVNc5XMXkeV594HCw4REwFohHoU",
             authDomain: "chess-788b3.firebaseapp.com",
@@ -134,20 +164,24 @@
         const lobbyList = document.getElementById('lobbyList');
         const gameArea = document.querySelector('.game-area');
         const chessBoardDiv = document.getElementById('chessBoard');
+        const playerTop = document.getElementById('playerTop');
+        const playerBottom = document.getElementById('playerBottom');
         const gameInfoPanel = document.getElementById('gameInfoPanel');
-        const messageBox = document.getElementById('messageBox');
         const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const gameOverIcon = document.getElementById('gameOverIcon');
         const gameOverTitle = document.getElementById('gameOverTitle');
         const gameOverMessage = document.getElementById('gameOverMessage');
         const rematchButton = document.getElementById('rematchButton');
+        const mainMenuButton = document.getElementById('mainMenuButton');
+
 
         const PIECE_SVG_URLS = { 'wP': 'https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg', 'wN': 'https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg', 'wB': 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg', 'wR': 'https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg', 'wQ': 'https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg', 'wK': 'https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg', 'bP': 'https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg', 'bN': 'https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg', 'bB': 'https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg', 'bR': 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg', 'bQ': 'https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg', 'bK': 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg' };
-        
         const moveSynth = new Tone.Synth().toDestination();
         const captureSynth = new Tone.MembraneSynth().toDestination();
         const checkSynth = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 } }).toDestination();
         const winSynth = new Tone.PolySynth(Tone.Synth, { "volume": -8, "envelope": { "attack": 0.01, "decay": 0.5, "sustain": 0.2, "release": 0.5 } }).toDestination();
         const lossSynth = new Tone.Synth({ oscillator: { type: "fmsine" }, envelope: { attack: 0.1, decay: 0.5, sustain: 0, release: 1 } }).toDestination();
+        const drawSynth = new Tone.Synth({ oscillator: { type: "triangle" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 } }).toDestination();
 
         function startAudio() { if (!audioStarted) { Tone.start(); audioStarted = true; } }
 
@@ -159,15 +193,19 @@
             gameLobby.classList.add('hidden');
             if (gameUnsubscribe) gameUnsubscribe();
             if (lobbyUnsubscribe) lobbyUnsubscribe();
+            
+            // Animasyonla gizle
+            gameOverOverlay.classList.remove('visible');
+            setTimeout(() => { gameOverOverlay.classList.add('hidden'); }, 300);
+
             gameMode = null; gameId = null;
-            gameOverOverlay.classList.add('hidden');
         }
 
         function showCreateGameModal() { createGameModal.classList.remove('hidden'); }
         function hideCreateGameModal() { createGameModal.classList.add('hidden'); }
         
         function showLobby() {
-            if (!userId) { return; }
+            if (!userId) return;
             mainMenu.style.display = 'none';
             gameLobby.classList.remove('hidden');
             gameLobby.style.display = 'flex';
@@ -179,9 +217,9 @@
                 snapshot.forEach(gameDoc => {
                     const gameData = gameDoc.data();
                     const gameElement = document.createElement('div');
-                    gameElement.className = 'p-3 rounded-lg cursor-pointer flex justify-between items-center';
+                    gameElement.className = 'p-3 rounded-lg cursor-pointer flex justify-between items-center hover:bg-gray-700';
                     gameElement.onclick = () => joinOnlineGame(gameDoc.id, gameData.password);
-                    const lockIcon = gameData.password ? '' : '';
+                    const lockIcon = gameData.password ? '' : ''; // Lock emoji
                     gameElement.innerHTML = `<span>${gameData.roomName || 'İsimsiz Oda'} ${lockIcon}</span><span class="text-sm text-gray-400">Kurucu: ${gameData.creatorName || 'Misafir'}</span>`;
                     lobbyList.appendChild(gameElement);
                 });
@@ -190,6 +228,7 @@
 
         function showGameUI(mode) {
             gameMode = mode; chess = new Chess(); fromSquare = null;
+            currentGameStatus = 'active';
             mainMenu.style.display = 'none';
             gameLobby.classList.add('hidden');
             gameArea.style.display = 'flex';
@@ -199,7 +238,7 @@
         function renderBoard() {
             chessBoardDiv.innerHTML = '';
             const board = chess.board();
-            const isFlipped = playerColor === 'black';
+            const isFlipped = (gameMode === 'online' && playerColor === 'black');
             for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
                 const row = isFlipped ? 7 - i : i; const col = isFlipped ? 7 - j : j;
                 const squareData = board[row][col]; const squareName = String.fromCharCode(97 + col) + (8 - row);
@@ -215,7 +254,7 @@
                 }
                 chessBoardDiv.appendChild(square);
             }
-            updateGameInfo();
+            updateGameInfo({});
         }
         
         function clearHighlights() {
@@ -229,8 +268,9 @@
             const moves = chess.moves({ square: sourceSquare, verbose: true });
             moves.forEach(move => {
                 const targetSquare = document.querySelector(`[data-square=${move.to}]`);
-                if (move.flags.includes('c') || move.flags.includes('e')) targetSquare.classList.add('possible-capture-ring');
-                else {
+                if (move.flags.includes('c') || move.flags.includes('e')) {
+                    targetSquare.classList.add('possible-capture-ring');
+                } else {
                     const dot = document.createElement('div');
                     dot.className = 'possible-move-dot';
                     targetSquare.appendChild(dot);
@@ -238,59 +278,103 @@
             });
         }
         
+        function findKingSquare(color) {
+            const board = chess.board();
+            for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+                const piece = board[i][j];
+                if (piece && piece.type === 'k' && piece.color === color) {
+                    return String.fromCharCode(97 + j) + (8 - i);
+                }
+            }
+            return null;
+        }
+
         function highlightCheck() {
-            const kingSquare = chess.king_attacked(chess.turn());
+            const kingSquare = findKingSquare(chess.turn());
             if (kingSquare) document.querySelector(`[data-square=${kingSquare}]`).classList.add('in-check');
         }
 
-        function updateGameInfo(gameData = {}) {
-            document.getElementById('playerTop').textContent = gameData.opponentName || '';
-            document.getElementById('playerBottom').textContent = gameData.creatorName || (playerColor === 'white' ? guestName : '');
-
-            let statusText = '';
-            if (chess.game_over()) {
-                currentGameStatus = 'ended';
-                const winnerColor = chess.turn() === 'w' ? 'Siyah' : 'Beyaz';
-                gameOverOverlay.classList.remove('hidden');
-                if (chess.in_checkmate()) {
-                    gameOverTitle.textContent = "Şah Mat!";
-                    gameOverMessage.textContent = `Kazanan: ${winnerColor}`;
-                    if (gameMode === 'online') {
-                         (winnerColor.toLowerCase() === playerColor) ? winSynth.triggerAttackRelease(["C4", "E4", "G4"], "0.5") : lossSynth.triggerAttackRelease("C3", "1");
-                    }
+        function updateGameInfo(gameData) {
+            if (gameMode === 'online') {
+                if(playerColor === 'white') {
+                    playerBottom.textContent = `Siz (${gameData.creatorName || guestName})`;
+                    playerTop.textContent = gameData.opponentName ? `Rakip (${gameData.opponentName})` : 'Rakip Bekleniyor...';
                 } else {
-                    gameOverTitle.textContent = "Berabere!";
-                    gameOverMessage.textContent = 'Oyun berabere sonuçlandı.';
+                    playerBottom.textContent = `Siz (${gameData.opponentName || guestName})`;
+                    playerTop.textContent = `Rakip (${gameData.creatorName || 'Bilinmiyor'})`;
                 }
             } else {
-                if (currentGameStatus === 'waiting') statusText = `Oda Kodu: ${gameId}`;
-                else {
-                    statusText = `Sıra: ${chess.turn() === 'w' ? 'Beyaz' : 'Siyah'}`;
-                    if (chess.in_check()) statusText += ' (Şah!)';
-                }
+                 playerTop.textContent = gameMode === 'bot' ? 'Bot (Siyah)' : 'Oyuncu 2 (Siyah)';
+                 playerBottom.textContent = gameMode === 'bot' ? `${guestName} (Beyaz)` : 'Oyuncu 1 (Beyaz)';
             }
-            gameInfoPanel.textContent = statusText;
+            
+            if (currentGameStatus === 'waiting') { 
+                gameInfoPanel.textContent = `Oyun Kodu: ${gameId} | Rakip bekleniyor...`;
+            } else if (currentGameStatus === 'active' && !chess.game_over()) {
+                let statusText = `Sıra: ${chess.turn() === 'w' ? 'Beyaz' : 'Siyah'}`;
+                if (chess.in_check()) statusText += ' (Şah!)';
+                gameInfoPanel.textContent = statusText;
+            }
             
             rematchButton.textContent = "Tekrar Oyna";
             rematchButton.classList.remove('rematch-requested');
-            if(gameData.rematchRequestedBy) {
+            if(gameMode === 'online' && gameData.rematchRequestedBy) {
                 if(gameData.rematchRequestedBy !== userId) {
-                    rematchButton.textContent = "Rakip Tekrar Oynamak İstiyor! (Kabul Et)";
+                    rematchButton.textContent = "Tekrar Oyna (Kabul Et)";
                     rematchButton.classList.add('rematch-requested');
                 } else {
-                     rematchButton.textContent = "Tekrar Oynama İsteği Gönderildi";
+                    rematchButton.textContent = "İstek Gönderildi";
                 }
             }
         }
+        
+        function checkGameOver() {
+            if (!chess.game_over()) return;
+            currentGameStatus = 'ended';
+            const winnerColor = chess.turn() === 'w' ? 'Siyah' : 'Beyaz';
+            let title = '', message = '', icon = '', isWin = false;
+
+            if (chess.in_checkmate()) {
+                title = "Şah Mat!"; 
+                message = `Kazanan: ${winnerColor}`; 
+                icon = '👑';
+                if (gameMode === 'online') {
+                    isWin = (winnerColor.toLowerCase() === playerColor);
+                } else if (gameMode === 'bot') {
+                    isWin = (winnerColor === 'Beyaz');
+                }
+            } else {
+                title = "Berabere!"; 
+                icon = '🤝';
+                if (chess.in_stalemate()) message = "Pat durumu nedeniyle berabere.";
+                else if (chess.in_threefold_repetition()) message = "Üç tekrar kuralı nedeniyle berabere.";
+                else if (chess.insufficient_material()) message = "Yetersiz materyal nedeniyle berabere.";
+                else message = "Oyun berabere sonuçlandı.";
+            }
+
+            if (isWin) winSynth.triggerAttackRelease(["C4", "E4", "G4"], "0.5");
+            else if (chess.in_checkmate()) lossSynth.triggerAttackRelease("C3", "1");
+            else drawSynth.triggerAttackRelease("A3", "1");
+            
+            gameOverIcon.textContent = icon;
+            gameOverTitle.textContent = title;
+            gameOverMessage.textContent = message;
+            
+            gameOverOverlay.classList.remove('hidden');
+            // Kısa bir gecikme sonrası 'visible' class'ını ekleyerek CSS animasyonunu tetikle
+            setTimeout(() => {
+                gameOverOverlay.classList.add('visible');
+            }, 10);
+        }
 
         async function createOnlineGame(roomName, password) {
-            showGameUI('online'); playerColor = 'white';
+            playerColor = 'white'; 
+            currentGameStatus = 'waiting';
+            showGameUI('online');
             const gameRef = await addDoc(collection(db, "games"), {
                 fen: new Chess().fen(), status: 'waiting', createdAt: serverTimestamp(),
-                creatorId: userId, creatorName: guestName,
-                opponentId: null, opponentName: null,
-                roomName: roomName, password: password || null,
-                rematchRequestedBy: null
+                creatorId: userId, creatorName: guestName, opponentId: null, opponentName: null,
+                roomName: roomName, password: password || null, rematchRequestedBy: null
             });
             gameId = gameRef.id;
             listenToGame(gameId);
@@ -299,42 +383,52 @@
         async function joinOnlineGame(code, password) {
             if (password) {
                 const enteredPassword = prompt("Bu oda şifreli. Lütfen şifreyi girin:");
-                if (enteredPassword !== password) {
-                    alert("Yanlış şifre!");
-                    return;
-                }
+                if (enteredPassword !== password) { alert("Yanlış şifre!"); return; }
             }
             if (lobbyUnsubscribe) lobbyUnsubscribe();
             const gameRef = doc(db, "games", code);
             const gameSnap = await getDoc(gameRef);
-            if (gameSnap.exists() && gameSnap.data().status === 'waiting') {
+            if (gameSnap.exists() && gameSnap.data().status === 'waiting' && gameSnap.data().creatorId !== userId) {
                 await updateDoc(gameRef, { opponentId: userId, opponentName: guestName, status: 'active' });
                 gameId = code; playerColor = 'black';
                 showGameUI('online');
                 listenToGame(gameId);
-            } else { alert("Oyun bulunamadı veya dolu!"); showLobby(); }
+            } else { 
+                if (!gameSnap.exists()) alert("Oyun bulunamadı!");
+                else if (gameSnap.data().creatorId === userId) alert("Kendi oyununuza katılamazsınız!");
+                else alert("Oyun dolu veya başlamış!");
+                showLobby(); 
+            }
         }
 
         function listenToGame(gId) {
             gameId = gId;
             gameUnsubscribe = onSnapshot(doc(db, "games", gId), (docSnap) => {
                 if (!docSnap.exists()) {
-                    if (currentGameStatus !== 'ended') alert("Oyun kurucu tarafından iptal edildi!");
-                    showMainMenu(); return;
+                    if (currentGameStatus !== 'ended') alert("Oyun kurucu tarafından iptal edildi veya bir hata oluştu!");
+                    showMainMenu(); 
+                    return;
                 }
                 const gameData = docSnap.data();
-                if (currentGameStatus === 'waiting' && gameData.status === 'active') messageBox.textContent = "Rakip bulundu! Oyun başlıyor.";
+                if (currentGameStatus === 'waiting' && gameData.status === 'active') {
+                    // console.log("Rakip bulundu! Oyun başlıyor.");
+                }
                 currentGameStatus = gameData.status;
                 if (chess.fen() !== gameData.fen) {
                     chess.load(gameData.fen);
-                    clearHighlights();
+                    clearHighlights(); 
                     renderBoard();
-                    if (chess.in_check()) {
-                         checkSynth.triggerAttackRelease("A5", "0.2");
-                         highlightCheck();
+                    if (chess.in_check()) { 
+                        checkSynth.triggerAttackRelease("A5", "0.2"); 
+                        highlightCheck(); 
                     }
+                    checkGameOver();
                 }
                 updateGameInfo(gameData);
+                if(gameData.status === 'ended' || (gameData.status === 'active' && chess.game_over())){
+                    // Oyun bittiğinde overlay göster
+                    checkGameOver();
+                }
             });
         }
 
@@ -344,34 +438,53 @@
                 (result.captured) ? captureSynth.triggerAttackRelease("C3", "8n") : moveSynth.triggerAttackRelease("C4", "8n");
                 clearHighlights();
                 renderBoard();
-                if (chess.in_check()) {
-                    checkSynth.triggerAttackRelease("A5", "0.2");
-                    highlightCheck();
+                if (chess.in_check()) { 
+                    checkSynth.triggerAttackRelease("A5", "0.2"); 
+                    highlightCheck(); 
                 }
-                if (gameMode === 'online') updateDoc(doc(db, "games", gameId), { fen: chess.fen() });
-                else if (gameMode === 'bot' && chess.turn() === 'b' && !chess.game_over()) setTimeout(makeBotMove, 250);
+                
+                if (gameMode === 'online') {
+                    updateDoc(doc(db, "games", gameId), { fen: chess.fen(), status: chess.game_over() ? 'ended' : 'active' });
+                } else if (gameMode === 'bot' && chess.turn() === 'b' && !chess.game_over()) {
+                    setTimeout(makeBotMove, 250);
+                }
+                
+                checkGameOver(); // Hamle sonrası oyun bitişini kontrol et
             }
             return result;
         }
 
         function onSquareClick(squareElement) {
             startAudio();
-            if (chess.game_over() || currentGameStatus !== 'active') return;
-            const square = squareElement.dataset.square;
-            const isMyTurn = (gameMode === 'local' || (gameMode === 'bot' && chess.turn() === 'w') || (gameMode === 'online' && ((playerColor === 'white' && chess.turn() === 'w') || (playerColor === 'black' && chess.turn() === 'b'))));
+            if (chess.game_over() || (gameMode === 'online' && currentGameStatus !== 'active')) return;
+
+            const isMyTurn = (gameMode === 'local') || 
+                             (gameMode === 'bot' && chess.turn() === 'w') ||
+                             (gameMode === 'online' && playerColor.charAt(0) === chess.turn());
+            
             if (!isMyTurn) return;
 
-            if (!fromSquare) {
-                const piece = chess.get(square);
-                if (piece && piece.color === chess.turn()) { fromSquare = square; highlightPossibleMoves(square); }
-            } else {
-                const move = { from: fromSquare, to: square, promotion: 'q' };
-                if (!handleMove(move)) {
+            const square = squareElement.dataset.square;
+            const piece = chess.get(square);
+
+            if (fromSquare) {
+                const move = { from: fromSquare, to: square, promotion: 'q' }; // Otomatik vezir promosyonu
+                if (handleMove(move)) {
+                    fromSquare = null;
+                } else { // Geçersiz hamle, yeni taşı seç
                     clearHighlights();
-                    const piece = chess.get(square);
-                    if (piece && piece.color === chess.turn() && square !== fromSquare) { fromSquare = square; highlightPossibleMoves(square); } 
-                    else { fromSquare = null; }
-                } else { fromSquare = null; }
+                    if (piece && piece.color === chess.turn()) {
+                        fromSquare = square;
+                        highlightPossibleMoves(square);
+                    } else {
+                        fromSquare = null;
+                    }
+                }
+            } else { // İlk tıklama, taş seçme
+                if (piece && piece.color === chess.turn()) {
+                    fromSquare = square;
+                    highlightPossibleMoves(square);
+                }
             }
         }
 
@@ -381,22 +494,34 @@
             const move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
             handleMove(move);
         }
+        
+        function startLocalGame() { playerColor = 'white'; showGameUI('local'); }
+        function startBotGame() { playerColor = 'white'; showGameUI('bot'); }
 
         async function handleRematch() {
+            if(gameMode === 'local' || gameMode === 'bot') {
+                showGameUI(gameMode); // Oyunu sıfırdan başlat
+                gameOverOverlay.classList.remove('visible');
+                setTimeout(() => gameOverOverlay.classList.add('hidden'), 300);
+                return;
+            }
+
             const gameRef = doc(db, "games", gameId);
             const gameSnap = await getDoc(gameRef);
+            if(!gameSnap.exists()) return;
             const gameData = gameSnap.data();
 
             if(gameData.rematchRequestedBy && gameData.rematchRequestedBy !== userId) {
-                // Rakip zaten istemiş, biz de kabul ediyoruz. Oyunu sıfırla.
-                await updateDoc(gameRef, {
-                    fen: new Chess().fen(),
-                    status: 'active',
-                    rematchRequestedBy: null
+                // Rakibin isteğini kabul et ve oyunu sıfırla
+                await updateDoc(gameRef, { 
+                    fen: new Chess().fen(), 
+                    status: 'active', 
+                    rematchRequestedBy: null 
                 });
-                gameOverOverlay.classList.add('hidden');
-            } else {
-                // İlk isteği biz yapıyoruz.
+                gameOverOverlay.classList.remove('visible');
+                setTimeout(() => { gameOverOverlay.classList.add('hidden'); }, 300);
+            } else if (!gameData.rematchRequestedBy) {
+                // İlk defa istek gönder
                 await updateDoc(gameRef, { rematchRequestedBy: userId });
             }
         }
@@ -409,15 +534,15 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) { 
                         userId = user.uid; 
-                        guestName = `Guest_${userId.substring(0, 6)}`;
-                        document.getElementById('currentUserIdDisplay').textContent = guestName;
+                        guestName = `Misafir_${userId.substring(0, 5)}`;
+                        document.getElementById('currentUserIdDisplay').textContent = `Kullanıcı: ${guestName}`;
                     } 
                     else { document.getElementById('currentUserIdDisplay').textContent = "Oturum Açılamadı."; }
                 });
             } catch (error) { console.error("Firebase Hatası:", error); }
         }
 
-        // Olay Atamaları
+        // Event Listeners
         document.getElementById('playVsBotBtn').addEventListener('click', () => { startAudio(); startBotGame(); });
         document.getElementById('createOnlineGameBtn').addEventListener('click', () => { startAudio(); showCreateGameModal(); });
         document.getElementById('confirmCreateGameBtn').addEventListener('click', () => {
@@ -432,11 +557,14 @@
         document.getElementById('playLocalBtn').addEventListener('click', () => { startAudio(); startLocalGame(); });
         document.getElementById('backToMenuFromLobbyBtn').addEventListener('click', showMainMenu);
         document.getElementById('backToMenuButton').addEventListener('click', showMainMenu);
-        document.getElementById('mainMenuButton').addEventListener('click', showMainMenu);
+        mainMenuButton.addEventListener('click', showMainMenu);
         rematchButton.addEventListener('click', handleRematch);
         chessBoardDiv.addEventListener('click', (e) => { const el = e.target.closest('.square'); if (el) onSquareClick(el); });
         
-        window.addEventListener('load', () => { initializeFirebaseApp(); showMainMenu(); });
+        window.addEventListener('load', () => { 
+            initializeFirebaseApp(); 
+            showMainMenu(); 
+        });
     </script>
 </body>
 </html>
