@@ -181,7 +181,7 @@
         </div>
     </div>
 
-    <div id="version">v1.5.2</div>
+    <div id="version">v1.5.3</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -253,7 +253,6 @@
             if(gameMode === 'online' && gameData.rematchRequestedBy) { if(gameData.rematchRequestedBy !== userId) { rematchButton.textContent = "Tekrar Oyna (Kabul Et)"; rematchButton.classList.add('rematch-requested'); } else { rematchButton.textContent = "İstek Gönderildi"; } } 
         }
 
-        // DÜZELTİLDİ: showGameOver fonksiyonu sadeleştirildi.
         function showGameOver(title, message, icon) {
             if (gameOverOverlay.classList.contains('visible')) return;
             if (timerInterval) clearInterval(timerInterval);
@@ -264,22 +263,21 @@
             gameOverOverlay.classList.remove('hidden'); setTimeout(() => { gameOverOverlay.classList.add('visible'); }, 10);
         }
         
-        // DÜZELTİLDİ: checkGameOver fonksiyonu sadeleştirildi ve sadece UI gösterme görevini üstlendi.
-        function checkGameOver() {
-            if (!chess.game_over()) return false;
-            if (currentGameStatus.startsWith('ended')) return true; // Zaten bitmişse tekrar işlem yapma.
+        // DÜZELTİLDİ: Bu fonksiyon artık sadece oyun sonu detaylarını belirleyip UI'ı tetikler.
+        function triggerGameOverUI() {
+            if (!chess.game_over()) return; 
             
             const winnerColor = chess.turn() === 'w' ? 'Siyah' : 'Beyaz'; let title = '', message = '', icon = '';
             if (chess.in_checkmate()) { title = "Şah Mat!"; message = `Kazanan: ${winnerColor}`; icon = '👑'; } 
             else { title = "Berabere!"; icon = '🤝'; if (chess.in_stalemate()) message = "Pat durumu nedeniyle berabere."; else if (chess.in_threefold_repetition()) message = "Üç tekrar kuralı nedeniyle berabere."; else if (chess.insufficient_material()) message = "Yetersiz materyal nedeniyle berabere."; else message = "Oyun berabere sonuçlandı."; }
             
             showGameOver(title, message, icon);
-            return true;
         }
 
         async function createOnlineGame(roomName, password, timeControl) { playerColor = 'white'; showGameUI('online'); currentGameStatus = 'waiting'; const timeInMs = timeControl > 0 ? timeControl * 60 * 1000 : null; const gameData = { fen: new Chess().fen(), status: 'waiting', createdAt: serverTimestamp(), creatorId: userId, creatorName: guestName, opponentId: null, opponentName: null, roomName: roomName, password: password || null, rematchRequestedBy: null, timeControlMinutes: timeControl, whiteTimeLeft: timeInMs, blackTimeLeft: timeInMs, lastMoveTimestamp: serverTimestamp() }; const gameRef = await addDoc(collection(db, "games"), gameData); gameId = gameRef.id; listenToGame(gameId); }
         async function joinOnlineGame(code, password) { if (password) { const enteredPassword = prompt("Bu oda şifreli. Lütfen şifreyi girin:"); if (enteredPassword !== password) { alert("Yanlış şifre!"); return; } } if (lobbyUnsubscribe) lobbyUnsubscribe(); const gameRef = doc(db, "games", code); const gameSnap = await getDoc(gameRef); if (gameSnap.exists() && gameSnap.data().status === 'waiting' && gameSnap.data().creatorId !== userId) { await updateDoc(gameRef, { opponentId: userId, opponentName: guestName, status: 'active', lastMoveTimestamp: serverTimestamp() }); gameId = code; playerColor = 'black'; showGameUI('online'); listenToGame(gameId); } else { alert(gameSnap.exists() ? "Oyun dolu veya başlamış!" : "Oyun bulunamadı!"); showLobby(); } }
         
+        // DÜZELTİLDİ: onSnapshot mantığı oyun sonu durumunu yönetmek için güncellendi.
         function listenToGame(gId) {
             gameId = gId; if (gameUnsubscribe) gameUnsubscribe();
             gameUnsubscribe = onSnapshot(doc(db, "games", gId), (docSnap) => {
@@ -289,22 +287,30 @@
                 if (currentGameStatus === 'active' && gameData.status === 'waiting') { opponentLeftNotification.classList.remove('hidden'); setTimeout(() => opponentLeftNotification.classList.add('hidden'), 5000); }
                 if (currentGameStatus === 'waiting' && gameData.status === 'active') { opponentLeftNotification.classList.add('hidden'); }
                 
-                const oldStatus = currentGameStatus; currentGameStatus = gameData.status;
+                const oldStatus = currentGameStatus; 
+                currentGameStatus = gameData.status;
 
                 if (chess.fen() !== gameData.fen) {
                     chess.load(gameData.fen); const history = chess.history({ verbose: true });
                     if (history.length > 0) { lastMove = history[history.length - 1]; }
-                    renderBoard(); if (chess.in_check()) { checkSynth.triggerAttackRelease("A5", "0.2"); highlightCheck(); }
+                    renderBoard(); 
+                    if (currentGameStatus === 'active' && chess.in_check()) { checkSynth.triggerAttackRelease("A5", "0.2"); highlightCheck(); }
                 }
                 updateGameInfo(gameData);
                 
                 if (gameData.timeControlMinutes > 0) { timerTop.style.display = 'block'; timerBottom.style.display = 'block'; startTimer(gameData); } 
                 else { timerTop.style.display = 'none'; timerBottom.style.display = 'none'; }
 
+                // YENİ MANTIK: Oyun sonu UI'ı sadece Firebase'den gelen veriye göre tetiklenir.
                 if (gameData.status !== oldStatus) {
-                    if (gameData.status === 'active' && gameOverOverlay.classList.contains('visible')) { gameOverOverlay.classList.remove('visible'); setTimeout(() => gameOverOverlay.classList.add('hidden'), 300); } 
-                    else if (gameData.status === 'ended') { checkGameOver(); } 
-                    else if (gameData.status === 'ended_time') { const winner = gameData.winner === 'w' ? 'Beyaz' : 'Siyah'; showGameOver('Süre Bitti!', `Kazanan: ${winner}`, '⏰'); }
+                    if (gameData.status === 'active' && gameOverOverlay.classList.contains('visible')) { 
+                        gameOverOverlay.classList.remove('visible'); setTimeout(() => gameOverOverlay.classList.add('hidden'), 300); 
+                    } else if (gameData.status === 'ended') {
+                        triggerGameOverUI(); // chess objesi zaten güncel olduğu için UI'ı tetikle.
+                    } else if (gameData.status === 'ended_time') { 
+                        const winner = gameData.winner === 'w' ? 'Beyaz' : 'Siyah'; 
+                        showGameOver('Süre Bitti!', `Kazanan: ${winner}`, '⏰'); 
+                    }
                 }
             });
         }
@@ -328,25 +334,26 @@
         
         function updateTimerDisplay(whiteMs, blackMs) { const whiteTimerEl = playerColor === 'white' ? timerBottom : timerTop; const blackTimerEl = playerColor === 'black' ? timerBottom : timerTop; whiteTimerEl.textContent = formatTime(whiteMs); blackTimerEl.textContent = formatTime(blackMs); }
         
-        // DÜZELTİLDİ: handleMove fonksiyonundaki mantık sırası değiştirildi.
+        // DÜZELTİLDİ: handleMove artık sadece Firebase'i günceller, UI tetiklemez.
         async function handleMove(move) {
-            if (!currentServerData) return null;
+            if (!currentServerData || currentServerData.status !== 'active') return null;
             
             const result = chess.move(move);
             if (result) {
                 (result.captured) ? captureSynth.triggerAttackRelease("C3", "8n") : moveSynth.triggerAttackRelease("C4", "8n");
                 clearHighlights(); 
                 lastMove = { from: result.from, to: result.to };
-                renderBoard();
-
-                const isGameOver = checkGameOver(); // Önce UI'ı tetikle ve oyunun bitip bitmediğini öğren.
 
                 if (gameMode === 'online') {
-                    const timeBeforeMove = result.color === 'w' ? currentServerData.blackTimeLeft : currentServerData.whiteTimeLeft; // Sıra değiştiği için
+                    const timeBeforeMove = result.color === 'w' ? currentServerData.blackTimeLeft : currentServerData.whiteTimeLeft;
                     const serverTimestampBeforeMove = currentServerData.lastMoveTimestamp ? currentServerData.lastMoveTimestamp.toMillis() : Date.now();
                     const updateData = { fen: chess.fen(), lastMoveTimestamp: serverTimestamp() };
                     
-                    updateData.status = isGameOver ? 'ended' : 'active';
+                    if (chess.game_over()) {
+                        updateData.status = 'ended';
+                    } else {
+                        updateData.status = 'active';
+                    }
 
                     if (currentServerData.timeControlMinutes > 0) {
                         const timeSpent = Date.now() - serverTimestampBeforeMove;
@@ -355,11 +362,15 @@
                         else { updateData.blackTimeLeft = remainingTime; }
                     }
                     await updateDoc(doc(db, "games", gameId), updateData);
-                }
-
-                if (!isGameOver) {
-                    if (chess.in_check()) { checkSynth.triggerAttackRelease("A5", "0.2"); highlightCheck(); }
-                    if (gameMode === 'bot' && chess.turn() === 'b') { setTimeout(makeBotMove, 250); }
+                } else {
+                    // Bot veya local oyunlar için doğrudan UI tetiklemesi yapılır.
+                    renderBoard();
+                    if (chess.game_over()){
+                        triggerGameOverUI();
+                    } else {
+                        if (chess.in_check()) { checkSynth.triggerAttackRelease("A5", "0.2"); highlightCheck(); }
+                        if (gameMode === 'bot' && chess.turn() === 'b') { setTimeout(makeBotMove, 250); }
+                    }
                 }
             }
             return result;
