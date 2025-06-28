@@ -44,68 +44,42 @@
     .modal-content .modal-buttons.flex-row { flex-direction: row; }
     .modal-content button { flex-grow: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 600; color: white; }
     
-    /* --- MOBİL UYUMLULUK GÜNCELLEMESİ --- */
     #mainMenu, #gameLobby { 
         display: flex; flex-direction: column; align-items: center; justify-content: center; 
         width: 90%; max-width: 450px; 
-        padding: 25px; /* Mobil için padding azaltıldı */
+        padding: 25px;
         background-color: var(--bg-medium); border-radius: 20px; 
         box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; 
     }
-    #mainMenu h1.text-4xl {
-        font-size: 2rem; /* Mobil için font boyutu küçültüldü */
-    }
-    #mainMenu button { 
-        width: 100%; padding: 12px; font-size: 1rem; /* Mobil için optimize edildi */
-        font-weight: 600; margin-top: 15px; border: none; border-radius: 10px; color: white; 
-    }
+    #mainMenu h1.text-4xl { font-size: 2rem; }
+    #mainMenu button { width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; margin-top: 15px; border: none; border-radius: 10px; color: white; }
     @media (min-width: 640px) {
-        #mainMenu h1.text-4xl { font-size: 2.25rem; } /* Tailwind varsayılanı */
+        #mainMenu h1.text-4xl { font-size: 2.25rem; }
         #mainMenu button { padding: 15px; font-size: 1.1rem; }
-        #mainMenu, #gameLobby { padding: 40px; } /* Geniş ekranlar için orjinal padding */
+        #mainMenu, #gameLobby { padding: 40px; }
     }
 
     #lobbyList > div { background-color: var(--bg-light); color: var(--text-light); }
     #lobbyList > div:hover { background-color: #4a4846; }
 
     .game-area { display: none; }
-    
-    /* --- MOBİL UYUMLULUK GÜNCELLEMESİ --- */
-    .main-content-wrapper { 
-        display: flex; 
-        flex-direction: column; /* Mobil öncelikli: elemanlar alt alta */
-        gap: 20px; 
-        align-items: center; /* Ortala */
-        width: 100%; 
-        max-width: 1200px;
-    }
+    .main-content-wrapper { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; max-width: 1200px; }
     @media (min-width: 820px) {
-        .main-content-wrapper {
-            flex-direction: row; /* Geniş ekranlarda yan yana */
-            align-items: flex-start;
-            justify-content: center;
-            gap: 30px;
-        }
+        .main-content-wrapper { flex-direction: row; align-items: flex-start; justify-content: center; gap: 30px; }
     }
     
-    /* --- MOBİL UYUMLULUK GÜNCELLEMESİ --- */
     .game-container { 
         background-color: var(--bg-medium); border: 1px solid #545250; border-radius: 12px; 
-        padding: 15px; /* Mobil için padding ayarlandı */
+        padding: 15px;
         display: flex; flex-direction: column; align-items: center; position: relative;
         width: 100%;
-        /* Tahtanın ekrana sığmasını sağlayan sihirli kısım */
         max-width: min(90vw, 85vh, 480px);
     }
-    @media (min-width: 640px) {
-        .game-container { padding: 20px; }
-    }
+    @media (min-width: 640px) { .game-container { padding: 20px; } }
     
-    /* --- DEĞİŞTİ: Satranç tahtası stilleri güncellendi (MOBİL UYUMLU) --- */
     .board { 
         display: grid; grid-template-columns: repeat(8, 1fr); 
-        width: 100%; /* Konteynerin genişliğini doldur */
-        aspect-ratio: 1 / 1; /* Kare oranını koru */
+        width: 100%; aspect-ratio: 1 / 1; 
         border-radius: 8px; overflow: hidden; 
         box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         border: 2px solid #201f1d;
@@ -137,12 +111,10 @@
         .game-over-overlay #gameOverIcon { font-size: 4rem; }
     }
 
-    /* --- MOBİL UYUMLULUK GÜNCELLEMESİ --- */
     #feedback-container {
         position: fixed; z-index: 102;
         background-color: var(--bg-medium); padding: 15px; border-radius: 12px;
         box-shadow: 0 5px 25px rgba(0,0,0,0.3);
-        /* Mobil Stilleri (Ekranın Altı) */
         width: 90%; max-width: 320px;
         bottom: 15px; left: 50%;
         transform: translateX(-50%);
@@ -154,13 +126,7 @@
     #feedback-container #feedbackSuccessMessage { color: var(--accent-green); font-size: 0.9rem; margin-top: 8px; font-weight: 500; }
     
     @media (min-width: 1024px) {
-        /* Geniş Ekran Stilleri (Sağ Üst Köşe) */
-        #feedback-container {
-            width: 280px;
-            top: 15px; right: 15px;
-            bottom: auto; left: auto;
-            transform: none;
-        }
+        #feedback-container { width: 280px; top: 15px; right: 15px; bottom: auto; left: auto; transform: none; }
     }
 
     #version { position: fixed; bottom: 10px; right: 15px; font-size: 0.8rem; color: var(--text-dark); z-index: 101; }
@@ -168,6 +134,7 @@
 </head>
 <body class="p-5">
     <div id="main-container">
+        <!-- HTML kodunun geri kalanı aynı -->
         <div id="mainMenu">
             <h1 class="text-4xl font-bold mb-2">Web Satranç</h1>
             <p id="currentUserIdDisplay" class="text-gray-400 font-medium text-sm mb-6">Kullanıcı: Yükleniyor...</p>
@@ -237,15 +204,14 @@
         <p id="feedbackSuccessMessage" class="hidden text-center">Geri bildiriminiz için teşekkürler!</p>
     </div>
 
-    <div id="version">v1.4.1-mobile</div>
+    <div id="version">v1.4.2-bugfix</div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- JavaScript KODUNUZDA HİÇBİR DEĞİŞİKLİK YAPILMADI ---
-        // --- Sadece CSS stilleri güncellendi. ---
+        // --- JavaScript kodunun sadece `listenToGame` fonksiyonu güncellendi. ---
 
         const firebaseConfig = {
             apiKey: "AIzaSyAcMo_abVNc5XMXkeV594HCw4REwFohHoU",
@@ -451,6 +417,9 @@
         }
         
         function showGameOver(title, message, icon) {
+            // Oyun sonu ekranı zaten görünürse tekrar tetikleme
+            if (gameOverOverlay.classList.contains('visible')) return;
+            
             currentGameStatus = 'ended';
             if (title.includes("Şah Mat")) { winSynth.triggerAttackRelease(["C4", "E4", "G4"], "0.5"); } 
             else { drawSynth.triggerAttackRelease("A3", "1"); }
@@ -499,43 +468,82 @@
             } else { alert(gameSnap.exists() ? "Oyun dolu veya başlamış!" : "Oyun bulunamadı!"); showLobby(); }
         }
         
+        // =========================================================================
+        // === BUG FIX BURADA UYGULANDI / THE BUG FIX IS APPLIED HERE ===
+        // =========================================================================
         function listenToGame(gId) {
             gameId = gId;
             gameUnsubscribe = onSnapshot(doc(db, "games", gId), (docSnap) => {
                 if (!docSnap.exists()) {
                     if (gameMode === 'online') { alert("Oda kurucusu oyundan ayrıldı. Oda kapatıldı."); showMainMenu(); } return;
                 }
+                
                 const gameData = docSnap.data();
+                
+                // Rakip ayrılma/gelme bildirimleri
                 if (currentGameStatus === 'active' && gameData.status === 'waiting') {
                     opponentLeftNotification.classList.remove('hidden'); setTimeout(() => opponentLeftNotification.classList.add('hidden'), 5000);
                 }
                 if (currentGameStatus === 'waiting' && gameData.status === 'active') { opponentLeftNotification.classList.add('hidden'); }
+                
                 currentGameStatus = gameData.status;
+
+                // FEN (tahta durumu) senkronizasyonu. Bu her zaman yapılmalı.
                 if (chess.fen() !== gameData.fen) {
-                    chess.load(gameData.fen); renderBoard();
-                    if (chess.in_check()) highlightCheck();
+                    chess.load(gameData.fen);
+                    renderBoard();
+                    if (chess.in_check()) {
+                        // Sadece şah sesi çıkar, highlightCheck() checkGameOver içinde zaten var.
+                        checkSynth.triggerAttackRelease("A5", "0.2");
+                        highlightCheck();
+                    }
                 }
+
+                // Bilgi panelini güncelle (Sıra kimde, oyuncu adları vb.)
                 updateGameInfo(gameData);
-                if (gameData.status === 'active' && !gameOverOverlay.classList.contains('hidden')) {
-                    gameOverOverlay.classList.remove('visible'); setTimeout(() => gameOverOverlay.classList.add('hidden'), 300);
+                
+                // Rematch (Tekrar Oyna) durumu için oyun sonu ekranını gizle
+                if (gameData.status === 'active' && gameOverOverlay.classList.contains('visible')) {
+                    gameOverOverlay.classList.remove('visible');
+                    setTimeout(() => gameOverOverlay.classList.add('hidden'), 300);
                 }
-                if (gameData.status === 'ended' && !chess.game_over()) { chess.load(gameData.fen); checkGameOver(); }
+
+                // Düzeltilmiş Oyun Sonu Kontrolü:
+                // Eğer sunucudan gelen durum 'ended' ise, oyun sonu fonksiyonunu çağır.
+                // Bu fonksiyon zaten kendi içinde oyunun bitip bitmediğini kontrol eder.
+                if (gameData.status === 'ended') {
+                    checkGameOver();
+                }
             });
         }
+        // =========================================================================
+        // === BUG FIX SONU / END OF BUG FIX ===
+        // =========================================================================
 
         function handleMove(move) {
             const result = chess.move(move);
             if (result) {
                 (result.captured) ? captureSynth.triggerAttackRelease("C3", "8n") : moveSynth.triggerAttackRelease("C4", "8n");
-                clearHighlights(); renderBoard();
-                if (chess.in_check()) { checkSynth.triggerAttackRelease("A5", "0.2"); highlightCheck(); }
+                clearHighlights(); 
                 
                 if (gameMode === 'online') {
+                    // Önce FEN'i güncelle, sonra render et. Bu, UI titremesini önler.
                     updateDoc(doc(db, "games", gameId), { fen: chess.fen(), status: chess.game_over() ? 'ended' : 'active' });
-                } else if (gameMode === 'bot' && chess.turn() === 'b' && !chess.game_over()) {
-                    setTimeout(makeBotMove, 250);
                 }
-                if (chess.game_over()) checkGameOver();
+                
+                renderBoard(); // Render işlemi FEN güncellendikten sonra yapılmalı.
+
+                if (chess.in_check()) { checkSynth.triggerAttackRelease("A5", "0.2"); highlightCheck(); }
+                
+                if (gameMode !== 'online') { // Lokal veya Bot oyunları
+                    if (gameMode === 'bot' && chess.turn() === 'b' && !chess.game_over()) {
+                        setTimeout(makeBotMove, 250);
+                    }
+                    if (chess.game_over()) {
+                        checkGameOver();
+                    }
+                }
+                // Online oyunlarda checkGameOver, listenToGame tarafından tetiklenir.
             }
             return result;
         }
